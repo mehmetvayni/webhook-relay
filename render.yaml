@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: korecekolay-webhook
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: DB_HOST
+        value: sql203.infinityfree.com
+      - key: DB_USER
+        value: if0_42077234
+      - key: DB_PASS
+        sync: false
+      - key: DB_NAME
+        sync: false
