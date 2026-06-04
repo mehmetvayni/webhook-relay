@@ -1,12 +1,29 @@
 <?php
+error_reporting(0);
+ini_set('display_errors', 0);
 header("Content-Type: text/plain");
 
 $merchant_key  = "5SnY5gCkE1G9tRZt";
 $merchant_salt = "8DbPU9eLdaf8z4cq";
 
+// POST verisini al
 $post = $_POST;
 
+// Eğer POST boşsa raw body'den dene
 if (empty($post)) {
+    $raw = file_get_contents("php://input");
+    if ($raw) {
+        parse_str($raw, $post);
+    }
+}
+
+if (empty($post)) {
+    echo "OK";
+    exit;
+}
+
+// paytr_token yoksa OK dön (PayTR tekrar dener)
+if (empty($post['paytr_token']) || empty($post['merchant_oid']) || empty($post['status']) || empty($post['total_amount'])) {
     echo "OK";
     exit;
 }
@@ -41,7 +58,6 @@ if ($post['status'] === 'success') {
         echo "OK"; exit;
     }
 
-    // DB bağlantısı
     $db_host = getenv("DB_HOST") ?: "sql203.infinityfree.com";
     $db_user = getenv("DB_USER") ?: "if0_42077234";
     $db_pass = getenv("DB_PASS") ?: "";
@@ -50,10 +66,9 @@ if ($post['status'] === 'success') {
     $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
 
     if ($conn->connect_error) {
-        echo "OK"; exit; // PayTR tekrar dener
+        echo "OK"; exit;
     }
 
-    // Daha önce işlendi mi?
     $oid_esc = $conn->real_escape_string($oid);
     $check = $conn->query("SELECT id FROM odeme_log WHERE merchant_oid='$oid_esc' LIMIT 1");
     if ($check->num_rows > 0) {
@@ -61,7 +76,6 @@ if ($post['status'] === 'success') {
         echo "OK"; exit;
     }
 
-    // Plan süresini hesapla
     if ($plan === "silver") {
         $bitis = "'" . date("Y-m-d H:i:s", strtotime("+45 days")) . "'";
     } elseif ($plan === "gold") {
